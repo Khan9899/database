@@ -1,1 +1,150 @@
+SHOW databases;
+USE world;
+SHOW TABLES;
+
+select * from country;
+select * from city;
+select * from countrylanguage;
+
+
+CREATE TABLE Inflation ( Inflation_ID int,
+						Country_Code char		(3),
+						Year_col smallint 		(6) ,
+                        CPI float				(6,2),
+                        CPI_FoodBeverage float  (6,2),
+                        CPI_Housing float       (6,2),
+                        CPI_Appearal 	  float (6,2),
+                        CPI_Transportation float(6,2),
+                        CPI_MedicalCare float 	(6,2),
+                        CPI_Recreation  float	(6,2),
+                        CPI_Education float     (6,2),
+                        CPI_OtherGoods float	(6,2), 
+                        PRIMARY KEY (Inflation_ID, Country_Code),
+                        foreign key (Country_code) references Country(code)
+                        );
+SELECT * FROM Inflation;
+#INSERT INTO Inflation (Inflation_ID, Country_Code, Year_col, CPI, CPI_FoodBeverage, CPI_Housing, CPI_Appearal, CPI_Transportation, CPI_MedicalCare, CPI_Recreation, CPI_Education, CPI_OtherGoods)
+#VALUES (1, 'AUS', 2022, 6.6, 9.2, 7.7, 7.8, 5.6, 7.56, 4.65, 5.68, 4.32);
+
+
+CREATE TABLE Green_House_Gas_Emissions ( Emission_ID int not null,
+										CountryCode		char(3) not null,
+                                        Year_col		smallint(6) NOT NULL,
+                                        CabonDioxide	float(6,2),
+                                        Methane			float(6,2),
+                                        NitrousOxide	float(6,2),
+                                        Total_Emissions	float(19,2),
+                                        Industry		float(20,10),
+                                        AgriandHeathPrd	float(10,2),
+                                        ElectandheatPrd	float(10,2),
+                                        Transporation	float(10,2),
+                                        Buildings		float(10,2),
+                                        OtherEnergy		float(10,2),
+                                        primary key (Emission_ID, CountryCode),
+                                        foreign key (CountryCode) references Country(code)
+                                        );
+                                        
+SELECT * FROM Green_House_Gas_Emissions;
+ALTER TABLE Green_House_Gas_Emissions CHANGE Totla_Emissions  Total_Emissions float(19,2);
+ALTER TABLE GREEN_House_Gas_Emissions MODIFY Industry DECIMAL(20,2);
+RENAME Table GREEN_House_Gas_Emissions TO Green_House_Gas_Emissions;
+
+
+
+CREATE TABLE Population_health ( 
+								Health_ID 		int NOT NULL,
+                                CountryCode	char(3) NOT NULL,
+                                Life_Expec		float(3,1),
+                                Year_col		smallint(6) NOT NULL,
+                                Cancer_rateDaily float(4,1),
+                                SuicideRatePer100K	float(4,1),
+                                Obesity_ratePercent	float(3,1),
+                                CrimeRateP100k		float(4,1),
+                                MentalHlthRatePercent	float(3,1),
+                                primary key (Health_id, CountryCode),
+                                foreign key (CountryCode) references Country(code)
+                                );			
+SELECT * FROM Population_health;
+insert into population_health (health_ID, CountryCode,Life_Expec, Year_col, Cancer_rateDaily, SuicideRatePer100K,OBesity_ratePercent,CrimeRateP100k,MentalHlthRatePercent)
+values (141, 'AUS', 83.2, 2022, 413.0, 12.0, 20.0, 246.0, 21.0);
+ALTER TABLE Population_health ADD CountryName varchar(5) AFTER Countrycode; 
+
+
+#Changing the name of a Column
+ALTER table Population_health
+MODIFY COLUMN SuicideRatePer100k float(5,2);
+
+
+UPDATE Population_health
+SET SuicideRatePer100k = 
+	CASE Health_ID
+    WHEN 141 THEN 413
+    WHEN 142 THEN 521
+    WHEN 143 THEN 87
+    WHEN 144 THEN 653
+    WHEN 146 THEN 127
+    WHEN 147 THEN 356
+    WHEN 148 THEN 654
+    WHEN 149 THEN 369
+    WHEN 150 THEN 375
+END
+WHERE Health_ID in (141,142,143,144,146,147,148,149,150);
+
+
+#Updating a values
+update Population_health
+	SET mentalhlthratepercent = 8
+    where CountryCode = 'ISR';
+    
+
+
+
+#
+#  Query to find the name and population of the country from country table whose 
+#Green House Emissions is greater than 50 Tons a year
+SELECT country.name, country.Population, country.SurfaceArea FROM country where country.Code IN (
+	SELECT Green_House_Gas_Emissions.CountryCode 
+	FROM Green_House_Gas_Emissions 
+	WHERE Green_House_Gas_Emissions.Total_Emissions > 50
+	);
+
+
+#Query to find the Obesity Percent, where the Food Prices went up by 5% 
+SELECT country.name, population_health.Obesity_ratePercent
+FROM country
+INNER JOIN Inflation ON Inflation.Country_Code = country.Code
+INNER JOIN population_health ON population_health.CountryCode = Inflation.Country_Code
+WHERE Inflation.CPI_FoodBeverage > 5
+ORDER BY Obesity_ratepercent DESC;
+
+
+#Query to Find the countries with Highest Suicide Rate Compare to the 
+#Mental Health Rate
+SELECT CountryCode, suicideRateper100k,  MentalHlthRatePercent FROM Population_health
+ORDER BY suicideRateper100k DESC ;
+
+#Average of Life Expectancy
+SELECT AVG(Lifeexpectancy) FROM country;
+
+# Query to Find a relation among Life Expectancy, population, and GNP of a Country
+ SELECT Population, LifeExpectancy, GNP FROM Country 
+ WHERE Population > 100000
+ ORDER BY LIfeexpectancy  ASC;
+ 
+ #List the number of Languages in each country and order them From High to Low.
+select  country.name, count(countrylanguage.language) AS language_num
+	FROM country
+    JOIN countrylanguage ON country.code = countrylanguage.countrycode
+    GROUP BY country.code
+    ORDER BY language_num DESC ;
+
+
+#Quering Different languages spoken in each country
+SELECT country.Name,
+GROUP_CONCAT(DISTINCT countrylanguage.Language ORDER BY countrylanguage.Language SEPARATOR ', ') 
+AS Languages
+FROM country
+INNER JOIN countrylanguage ON country.Code = countrylanguage.CountryCode
+GROUP BY country.Name
+ORDER BY country.Name ASC;
 
